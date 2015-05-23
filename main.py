@@ -10,15 +10,36 @@ pygame.init()
 #Create class objects
 
 class Obj(object):
-    def __init__(self,image,rect): #This specifies the basic parameters for when we create the object
+    def __init__(self,rect,image=None): #This specifies the basic parameters for when we create the object
         self.rect=rect
-        self.image=pygame.transform.scale(image,(self.rect.bottom,self.rect.right))#Self allows the components of the object to be used in any function of the class
+        if image is not None:
+            self.image=pygame.transform.scale(image,(self.rect.bottom,self.rect.right))#Self allows the components of the object to be used in any function of the class
 
+        else:
+            self.image=None
 
     def draw(self):
         global screen
 
-        screen.blit(self.image,self.rect) #Draws image and rectangle onto screen
+        if self.image is not None:
+            screen.blit(self.image,self.rect) #Draws image and rectangle onto screen
+
+class Sprite(Obj):
+    def __init__(self,states,state,velocity,*arg,**kwargs):
+        self.states=states
+        self.state=state
+        self.velocity=velocity
+
+        super(Sprite,self).__init__(*arg,**kwargs) #The sprite object, although individual, now inherits all the properties of the obj class
+
+        for x in range(len(states)):
+            self.states[x]=pygame.transform.scale(self.states[x],(self.rect.bottom,self.rect.right))
+
+    def draw(self):
+        screen.blit(self.states[self.state],self.rect)
+
+    def act(self):
+        self.rect.move_ip(self.velocity)
 
 #Create functions
 
@@ -46,7 +67,9 @@ clock=pygame.time.Clock()
 
 bg=Obj(image=pygame.image.load("Grass.png"),rect=pygame.Rect(0,0,HEIGHT,WIDTH))
 
-key=0
+player=Sprite(rect=pygame.Rect(100,100,25,25),states=[pygame.image.load("prisoner_front.png")],state=0,velocity=(0,0))
+
+key=[]
 
 #Create game loop
 
@@ -56,12 +79,28 @@ while True:
             terminate()
 
         if event.type==KEYDOWN:
-            key=event.key
+            key.append(event.key)
 
         if event.type==KEYUP:
-            key=0        
+            key=[]
+            player.velocity=(0,0)
+
+    for event in key:
+        if event==K_UP:
+            player.velocity=(0,-10)
+
+        if event==K_DOWN:
+            player.velocity=(0,10)
+
+        if event==K_LEFT:
+            player.velocity=(-10,0)
+
+        if event==K_RIGHT:
+            player.velocity=(10,0)
 
     bg.draw()
+    player.draw()
+    player.act()
 
     pygame.display.update() #Update
     clock.tick(FPS)
